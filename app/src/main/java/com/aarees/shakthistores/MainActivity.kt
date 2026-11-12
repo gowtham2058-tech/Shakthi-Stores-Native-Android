@@ -17,6 +17,9 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
+import java.net.URL
 
 private val Green = Color(0xFF087C50)
 private val PaleGreen = Color(0xFFE8F7EF)
@@ -24,6 +27,75 @@ private val Page = Color(0xFFF6F8FA)
 private val Border = Color(0xFFE1E7EB)
 
 data class Product(val name: String, val price: Double)
+private const val CATALOGUE_URL =
+    "https://aareeshyd.s3.ap-south-1.amazonaws.com/SaktheItems.csv"
+
+private fun parseCsvLine(line: String): List<String> {
+    val result = mutableListOf<String>()
+    val field = StringBuilder()
+    var quoted = false
+    var i = 0
+
+    while (i < line.length) {
+        val c = line[i]
+
+        when {
+            c == '"' && quoted && i + 1 < line.length &&
+                line[i + 1] == '"' -> {
+                field.append('"')
+                i++
+            }
+            c == '"' -> quoted = !quoted
+            c == ',' && !quoted -> {
+                result.add(field.toString().trim())
+                field.clear()
+            }
+            else -> field.append(c)
+        }
+        i++
+    }
+
+    result.add(field.toString().trim())
+    return result
+}
+
+private suspend fun fetchProducts(): List<Product> =
+    withContext(Dispatchers.IO) {
+        val connection = URL(CATALOGUE_URL).openConnection()
+        connection.connectTimeout = 15000
+        connection.readTimeout = 20000
+
+        val rows = connection.getInputStream()
+            .bufferedReader(Charsets.UTF_8)
+            .use { it.readLines() }
+
+        require(rows.isNotEmpty()) { "Catalogue is empty" }
+
+        val headers = parseCsvLine(rows.first())
+            .map { it.trim().removePrefix("\uFEFF").lowercase() }
+
+        val nameIndex = headers.indexOf("itemname")
+        val priceIndex = headers.indexOf("salerate")
+
+        require(nameIndex >= 0 && priceIndex >= 0) {
+            "CSV must contain ItemName and SaleRate columns"
+        }
+
+        rows.drop(1).mapNotNull { line ->
+            val columns = parseCsvLine(line)
+            if (columns.size <= maxOf(nameIndex, priceIndex)) {
+                null
+            } else {
+                val name = columns[nameIndex].trim()
+                val price = columns[priceIndex].trim()
+                    .replace(",", "").toDoubleOrNull()
+
+                if (name.isNotBlank() && price != null) {
+                    Product(name, price)
+                } else null
+            }
+        }
+    }
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
