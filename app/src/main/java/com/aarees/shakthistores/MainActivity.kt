@@ -5,6 +5,9 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.background
+import androidx.compose.foundation.Image
+import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -175,12 +178,14 @@ fun ShakthiDashboard() {
                     .padding(16.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Text(
-                    "SHAKTHI STORES",
-                    color = Green,
-                    fontWeight = FontWeight.Bold,
-                    fontSize = 18.sp
-                )
+                Image(
+          painter = painterResource(id = R.drawable.shakthi_logo),
+          contentDescription = "Shakthi Stores Logo",
+          modifier = Modifier
+           .width(150.dp)
+           .height(55.dp),
+         contentScale = ContentScale.Fit
+)
 
                 Spacer(Modifier.weight(1f))
 
