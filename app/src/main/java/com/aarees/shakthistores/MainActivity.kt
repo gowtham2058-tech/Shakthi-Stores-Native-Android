@@ -97,11 +97,11 @@ private suspend fun fetchProducts(): List<Product> =
                     .lowercase(Locale.ROOT)
             }
 
-        val nameIndex = headers.indexOf("itemname")
-        val priceIndex = headers.indexOf("salerate")
+        val nameIndex = headers.indexOf("product name")
+        val priceIndex = headers.indexOf("sale rate")
 
         require(nameIndex >= 0 && priceIndex >= 0) {
-            "CSV must contain ItemName and SaleRate columns"
+            "The CSV must contain Product Name and Sale Rate columns"
         }
 
         rows.drop(1).mapNotNull { line ->
